@@ -1,0 +1,179 @@
+import { useEffect, useRef, useState } from 'react';
+import Sidebar from '../components/Sidebar';
+import MobileHeader from '../components/MobileHeader';
+import MobileBottomNav from '../components/MobileBottomNav';
+import ChatWorkspace from '../components/ChatWorkspace';
+import ConnectionsTab from '../components/ConnectionsTab';
+import PendingRequestsTab from '../components/PendingRequestsTab';
+import GlobalSearchTab from '../components/GlobalSearchTab';
+import ProfileSettingsTab from '../components/ProfileSettingsTab';
+import { useDashboardConnections } from '../hooks/useDashboardConnections';
+import { getSocket } from '../services/socketService';
+
+function ChatDashboardView({ user, onLogout, isSubmitting }) {
+  const socket = getSocket();
+  const [currentView, setCurrentView] = useState('messages');
+  const [hasUnread, setHasUnread] = useState(false);
+
+  const {
+    searchInput,
+    setSearchInput,
+    debouncedSearch,
+    myConnections,
+    pendingRequests,
+    pendingCount,
+    searchRecords,
+    loading,
+    error,
+    actionLoadingKey,
+    runAction,
+    removeConnectionRequest,
+    sendConnectionRequest,
+    withdrawConnectionRequest,
+    handleConnectionRequest,
+  } = useDashboardConnections();
+
+  // Sync currentView reference for socket event closures
+  const currentViewRef = useRef(currentView);
+  useEffect(() => {
+    currentViewRef.current = currentView;
+    if (currentView === 'messages') {
+      setHasUnread(false);
+    }
+  }, [currentView]);
+
+  // Establish persistent socket event listeners on mount
+  useEffect(() => {
+    const handleReceived = () => {
+      if (currentViewRef.current !== 'messages') {
+        setHasUnread(true);
+      }
+    };
+
+    socket.on('message:received', handleReceived);
+
+    return () => {
+      socket.off('message:received', handleReceived);
+    };
+  }, [socket]);
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 flex-col md:flex-row">
+      {/* Desktop Left Sidebar */}
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        hasUnread={hasUnread}
+        pendingCount={pendingCount}
+        user={user}
+        onLogout={onLogout}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Mobile Top Header (hidden on desktop) */}
+      <MobileHeader
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        user={user}
+        onLogout={onLogout}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Main content pane */}
+      <div className="flex-1 h-full overflow-hidden flex flex-col">
+        {currentView === 'messages' ? (
+          <ChatWorkspace
+            user={user}
+            parentSocket={socket}
+            friends={myConnections}
+            friendsLoading={loading}
+            friendsError={error}
+          />
+        ) : currentView === 'settings' ? (
+          <div className="flex-1 overflow-y-auto p-3 sm:p-8 bg-slate-50">
+            <ProfileSettingsTab />
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto p-3 sm:p-8 bg-slate-50">
+            <main className="mx-auto w-full max-w-5xl">
+              <section className="rounded-2xl md:rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-8 shadow-md sm:shadow-xl">
+                {/* Dynamic Page Header */}
+                <header className="flex flex-col gap-1.5 sm:gap-2 border-b border-slate-200 pb-4 sm:pb-6 mb-4 sm:mb-6">
+                  <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-cyan-700">
+                    {currentView === 'search' ? 'Directory Search' : currentView === 'requests' ? 'Network Invitations' : 'Connections Workspace'}
+                  </p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900" style={{ fontFamily: 'Sora, sans-serif' }}>
+                    {currentView === 'search' ? 'Global Directory Search' : currentView === 'requests' ? 'Pending Network Invites' : 'My Network Connections'}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                    {currentView === 'search' && 'Search and connect with other SyncTalk users globally.'}
+                    {currentView === 'requests' && 'Accept or decline pending incoming invitations.'}
+                    {currentView === 'connections' && 'Interact, chat, or manage your established connections.'}
+                  </p>
+                </header>
+
+                {/* Main Content Component Routing */}
+                <div>
+                  {currentView === 'requests' && (
+                    <PendingRequestsTab
+                      searchInput={searchInput}
+                      setSearchInput={setSearchInput}
+                      pendingRequests={pendingRequests}
+                      loading={loading}
+                      error={error}
+                      actionLoadingKey={actionLoadingKey}
+                      runAction={runAction}
+                      removeConnectionRequest={removeConnectionRequest}
+                      sendConnectionRequest={sendConnectionRequest}
+                      withdrawConnectionRequest={withdrawConnectionRequest}
+                      handleConnectionRequest={handleConnectionRequest}
+                    />
+                  )}
+                  {currentView === 'connections' && (
+                    <ConnectionsTab
+                      searchInput={searchInput}
+                      setSearchInput={setSearchInput}
+                      myConnections={myConnections}
+                      loading={loading}
+                      error={error}
+                      actionLoadingKey={actionLoadingKey}
+                      runAction={runAction}
+                      removeConnectionRequest={removeConnectionRequest}
+                    />
+                  )}
+                  {currentView === 'search' && (
+                    <GlobalSearchTab
+                      searchInput={searchInput}
+                      setSearchInput={setSearchInput}
+                      debouncedSearch={debouncedSearch}
+                      searchRecords={searchRecords}
+                      loading={loading}
+                      error={error}
+                      actionLoadingKey={actionLoadingKey}
+                      runAction={runAction}
+                      removeConnectionRequest={removeConnectionRequest}
+                      sendConnectionRequest={sendConnectionRequest}
+                      withdrawConnectionRequest={withdrawConnectionRequest}
+                      handleConnectionRequest={handleConnectionRequest}
+                    />
+                  )}
+                </div>
+              </section>
+            </main>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Bottom Navigation Bar (hidden on desktop) */}
+      <MobileBottomNav
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        hasUnread={hasUnread}
+        pendingCount={pendingCount}
+      />
+    </div>
+  );
+}
+
+export default ChatDashboardView;
+
