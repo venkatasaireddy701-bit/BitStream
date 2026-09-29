@@ -1,9 +1,9 @@
-# ⚡ SynkTalk
+# ⚡ BitStream
 
-[![Live App](https://img.shields.io/badge/Live_App-synk--talk.vercel.app-blueviolet?style=for-the-badge&logo=vercel)](https://synk-talk.vercel.app/)
-[![backend-ci](https://img.shields.io/github/actions/workflow/status/dileep812/synkTalk/ci.yml?branch=main&style=for-the-badge&logo=github&label=Tests)](https://github.com/dileep812/synkTalk/actions/workflows/ci.yml)
+[![Live App](https://img.shields.io/badge/Live_App-bit--stream--one.vercel.app-blueviolet?style=for-the-badge&logo=vercel)](https://bit-stream-one.vercel.app/)
+[![backend-ci](https://img.shields.io/github/actions/workflow/status/venkatasaireddy701-bit/BitStream/ci.yml?branch=main&style=for-the-badge&logo=github&label=Tests)](https://github.com/venkatasaireddy701-bit/BitStream/actions/workflows/ci.yml)
 
-**SynkTalk** is a fast real-time chat application built with **React**, **Node.js/Express**, **Socket.io**, **Redis**, and **MongoDB**. 
+**BitStream** is a fast real-time chat application built with **React**, **Node.js/Express**, **Socket.io**, **Redis**, and **MongoDB**. 
 
 It delivers instant messages in under **10ms** by saving messages in a fast **Redis memory queue** first, and saving them into **MongoDB** only when 100 messages are reached. If Redis fails, messages are saved directly to MongoDB without losing any data.
 
@@ -18,7 +18,7 @@ flowchart TD
         B["👤 User B (Receiver)"]
     end
 
-    subgraph App["⚡ SynkTalk Server"]
+    subgraph App["⚡ BitStream Server"]
         Socket["Socket.io Server\n(Delivers messages instantly)"]
         Check{"Is Redis Working?"}
     end
